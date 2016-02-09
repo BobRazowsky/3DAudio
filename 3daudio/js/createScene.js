@@ -131,7 +131,7 @@ function init(){
 	    
 	    for (var index = 0; index < myAnalyser.FFT_SIZE / 2; index++) {
 	        spatialBox = BABYLON.Mesh.CreateBox("sb" + index, 2, scene);
-	        spatialBox.position = new BABYLON.Vector3((index * 2.1), 0, 0);
+	        spatialBox.position = new BABYLON.Vector3((index * 2), 0, 0);
 	        //spatialBox.scaling.z = 10;
 	        spatialBox.material = new BABYLON.StandardMaterial("sbm" + index, scene);
 	        spatialBox.material.alpha = .5;
