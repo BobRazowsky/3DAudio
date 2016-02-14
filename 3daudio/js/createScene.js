@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
     if (BABYLON.Engine.isSupported()) {
-        console.log("nique");
         init();
     }
 }, false);
@@ -114,46 +113,129 @@ function init(){
 	    var tamb = new BABYLON.Sound("tamb", "./audio/22_TAMB_02.wav", scene, null, {loop: false, autoplay: false});
 	    var shaker = new BABYLON.Sound("shaker", "./audio/25_SHAKER_02.wav", scene, null, {loop: false, autoplay: false});
 	    var clap = new BABYLON.Sound("clap", "./audio/26_CLAP.wav", scene, null, {loop: false, autoplay: false});
+	    var atari = new BABYLON.Sound("clap", "./audio/atari2.mp3", scene, null, {loop: false, autoplay: false});
+	    var atari2 = new BABYLON.Sound("clap", "./audio/atari3.mp3", scene, null, {loop: false, autoplay: false});
 	    
-	    var song = new BABYLON.Sound("song", "./audio/getLucky.mp3", scene, null, {loop: false, autoplay: true});
+	    var song = new BABYLON.Sound("song", "./audio/getLucky.mp3", scene, null, {loop: false, autoplay: false});
 
 
 
 	    // Start the analyser
 	    var myAnalyser = new BABYLON.Analyser(scene);
 	    BABYLON.Engine.audioEngine.connectToAnalyser(myAnalyser);
-	    myAnalyser.FFT_SIZE = 32;
+	    myAnalyser.FFT_SIZE = 128;
 	    myAnalyser.SMOOTHING = 0.9;
 
 	    this.spatialBoxArray = [];
 	    var spatialBox;
 	    var color;
-	    
+	    var boxSize = .5;
+
 	    for (var index = 0; index < myAnalyser.FFT_SIZE / 2; index++) {
-	        spatialBox = BABYLON.Mesh.CreateBox("sb" + index, 2, scene);
-	        spatialBox.position = new BABYLON.Vector3((index * 2), 0, 0);
+	        spatialBox = BABYLON.Mesh.CreateBox("sb" + index, boxSize, scene);
+	        spatialBox.position = new BABYLON.Vector3((index * boxSize), 0, 0);
 	        //spatialBox.scaling.z = 10;
 	        spatialBox.material = new BABYLON.StandardMaterial("sbm" + index, scene);
 	        spatialBox.material.alpha = .5;
 	        color = hsvToRgb(index / (myAnalyser.FFT_SIZE) / 2 * 360, 100, 50),
-	        spatialBox.material.diffuseColor = new BABYLON.Color3(color.r, color.g, color.b);
-	        spatialBox.material.emissiveColor = new BABYLON.Color3(color.r, color.g, color.b);
+	        //color = hsvToRgb(223, index / (myAnalyser.FFT_SIZE) / 2 * 360, 50),
+	        // spatialBox.material.diffuseColor = new BABYLON.Color3(color.r, color.g, color.b);
+	        // spatialBox.material.emissiveColor = new BABYLON.Color3(color.r, color.g, color.b);
 
 	        this.spatialBoxArray.push(spatialBox);
 	        //ground.material.reflectionTexture.renderList.push(spatialBox);
 	        //console.log(ground.material.reflectionTexture.renderList);
 	    }
 
-
+	    console.log(document.AudioEngine);
 
 	    var updateSonograph = function() {
 	      fft = myAnalyser.getByteFrequencyData();
 	        for (var i = 0; i < myAnalyser.FFT_SIZE / 2 ; i++) {
-	             this.spatialBoxArray[i].scaling.y =  fft[i] / 16 + 1;
+	             this.spatialBoxArray[i].scaling.y =  fft[i] / 8 + 1;
 	             //this.spatialBoxArray[i].material.alpha = fft[i]/16 + .3;
 	        }
 	    }.bind(this);
 
+	    var basicBeat = {
+    		measures : 1,
+    		elements: [
+    			{sound: bass, positions: [0,2,4,6]},
+	    		{sound: snare, positions: [2,6]}
+    		]
+    	};
+
+	    var superBeat = {
+    		measures : 1,
+    		elements: [
+    			{sound: bass, positions: [0,4]},
+		    	{sound: snare, positions: [2,6]},
+		    	{sound: rimshot, positions: [1,3,5,7]}
+    		]
+    	};
+
+	    var gigaBeat = {
+    		measures : 2,
+    		elements: [
+    			{sound: bass, positions: [0,4,5,7,8,12]},
+		    	{sound: snare, positions: [2,5,6,10,14]},
+		    	{sound: tamb, positions: [1,3,5,7,9,11,13,15]},
+		    	{sound: rimshot, positions: [1,3,5,5.5,6,7]},
+		    	{sound: crash, positions: [7]},
+		    	// {sound: atari, positions: [0]},
+		    	// {sound: atari2, positions: [12]}
+    		]
+    	};
+
+	    var playBeat = function(beat, repeats){
+
+	    	var tempo = 110;
+		    var eightNoteTime = (60/tempo) / 2;
+
+		    var measures = beat.measures;
+
+		    for(var bar = 0; bar < repeats; bar++){
+
+		    	var time = bar * (8 * measures) * eightNoteTime;	
+
+		    	for(var i = 0; i < beat.elements.length; i++){
+
+		    		var sound = beat.elements[i].sound;
+
+		    		for(var j = 0; j < beat.elements[i].positions.length; j++){
+
+		    			sound.play(time + beat.elements[i].positions[j] * eightNoteTime);
+
+		    		}
+		    	}
+		    }
+	    }
+
+	    var metronome = function(){
+	    	var ticTac = new BABYLON.Sound("tictac", "./audio/02_METRONOME_02.wav", scene, function () {
+			  // Sound has been downloaded & decoded
+			  playTempo();
+			 }, 
+			 {loop: false, autoplay: false});
+
+	    	//var startTime = Date.now();
+	    	//console.log(startTime);
+
+	    	var playTempo = function(){
+	    		var tempo = 120;
+		    	var eightNoteTime = (60/tempo) / 2;
+
+		    	for(var bar = 0; bar < 2; bar++){
+
+		    		var time = bar * 16 * eightNoteTime;	
+		    		ticTac.play(time);
+		    		ticTac.play(time + 2 * eightNoteTime);
+		    		ticTac.play(time + 4 * eightNoteTime);
+		    		ticTac.play(time + 6 * eightNoteTime);
+
+		    	}
+	    	}
+	    }
 
 
 	    window.setInterval(updateSonograph, 10);
@@ -161,39 +243,60 @@ function init(){
 	    var playSound = function(){
 	        var sound;
 
-	        switch(event.code){
-	            case "KeyQ":
+	        //console.log(event.keyCode);
+
+	        switch(event.keyCode){
+	            case 97:
 	                sound = bass;
 	                break;
-	            case "KeyW":
+	            case 122:
 	                sound = snare;
 	                break;
-	            case "KeyE":
+	            case 101:
 	                sound = rimshot;
 	                break;
-	            case "KeyR":
+	            case 114:
 	                sound = tom;
 	                break;
-	            case "KeyT":
+	            case 116:
 	                sound = ride;
 	                break;
-	            case "KeyY":
+	            case 121:
 	                sound = crash;
 	                break;
-	            case "KeyU":
+	            case 117:
 	                sound = tamb;
 	                break;
-	            case "KeyI":
+	            case 105:
 	                sound = shaker;
 	                break;
-	            case "KeyO":
+	            case 111:
 	                sound = clap;
+	                break;
+	            case 115:
+	                song.stop();
+	                break;
+	            case 112:
+	                sound = song;
+	                break;
+	            case 113:
+	                sound = atari;
+	                break;
+	            case 100:
+	                sound = atari2;
+	                break;
+	            case 109:
+	                playBeat(gigaBeat, 2);
 	                break;
 	            default:
 	                sound = bass;
 	        }
 
-	        sound.play();
+	        if(event.keyCode != 115 && event.keyCode != 109){
+	        	sound.play();
+	        }
+
+	        
 	        //updateSonograph();
 	    }
 
